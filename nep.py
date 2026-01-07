@@ -18,7 +18,7 @@ st.title("🌍 Nepal Earthquake Hierarchical Clustering & Prediction")
 @st.cache_data
 def load_data():
     return pd.read_csv(
-        r"C:\Users\USER\Desktop\Heirarical\nepal_earthquakes_1990_2026.csv"
+        r"earthquakes_1990_2026.csv"
     )
 
 df = load_data()
