@@ -17,9 +17,7 @@ st.title("🌍 Nepal Earthquake Hierarchical Clustering & Prediction")
 # -------------------------------
 @st.cache_data
 def load_data():
-    return pd.read_csv(
-        r"earthquakes_1990_2026.csv"
-    )
+    return pd.read_csv("earthquakes_1990_2026.csv")  # Removed raw string prefix as it's not needed for standard paths
 
 df = load_data()
 
@@ -30,6 +28,10 @@ st.dataframe(df.head())
 # Select Numeric Features
 # -------------------------------
 X = df.select_dtypes(include=[np.number])
+if X.empty:
+    st.error("No numeric columns found in the dataset.")
+    st.stop()
+
 X = X.fillna(X.mean())
 
 st.subheader("🔢 Selected Numeric Features")
@@ -59,14 +61,9 @@ st.pyplot(fig)
 # -------------------------------
 st.subheader("🎯 Clustering")
 
-n_clusters = st.slider(
-    "Select Number of Clusters", 2, 10, 3
-)
+n_clusters = st.slider("Select Number of Clusters", 2, 10, 3)
 
-hc = AgglomerativeClustering(
-    n_clusters=n_clusters,
-    linkage="ward"
-)
+hc = AgglomerativeClustering(n_clusters=n_clusters, linkage="ward")
 
 clusters = hc.fit_predict(X_scaled)
 df["Cluster"] = clusters
@@ -79,17 +76,15 @@ st.dataframe(df.head())
 # -------------------------------
 st.subheader("📈 Cluster Visualization")
 
-fig2, ax2 = plt.subplots(figsize=(8, 6))
-ax2.scatter(
-    X_scaled[:, 0],
-    X_scaled[:, 1],
-    c=clusters,
-    cmap="rainbow"
-)
-ax2.set_xlabel(X.columns[0])
-ax2.set_ylabel(X.columns[1])
-ax2.set_title("Hierarchical Clustering Result")
-st.pyplot(fig2)
+if X.shape[1] >= 2:
+    fig2, ax2 = plt.subplots(figsize=(8, 6))
+    ax2.scatter(X_scaled[:, 0], X_scaled[:, 1], c=clusters, cmap="rainbow")
+    ax2.set_xlabel(X.columns[0])
+    ax2.set_ylabel(X.columns[1])
+    ax2.set_title("Hierarchical Clustering Result")
+    st.pyplot(fig2)
+else:
+    st.warning("Not enough numeric features for 2D visualization.")
 
 # =====================================================
 # 🔮 PREDICTION SECTION (NEW EARTHQUAKE DATA)
@@ -97,25 +92,27 @@ st.pyplot(fig2)
 st.subheader("🔮 Predict Cluster for New Earthquake Data")
 
 input_data = []
-
 for col in X.columns:
     value = st.number_input(f"Enter {col}", value=float(X[col].mean()))
     input_data.append(value)
 
 if st.button("Predict Cluster"):
     input_array = np.array(input_data).reshape(1, -1)
-
+    
     # Scale new input
     input_scaled = scaler.transform(input_array)
-
-    # Find nearest cluster (manual approach)
+    
+    # Find nearest cluster (manual approach using centroids)
     distances = []
     for i in range(n_clusters):
         cluster_points = X_scaled[clusters == i]
-        centroid = cluster_points.mean(axis=0)
-        dist = np.linalg.norm(input_scaled - centroid)
-        distances.append(dist)
-
+        if len(cluster_points) > 0:
+            centroid = cluster_points.mean(axis=0)
+            dist = np.linalg.norm(input_scaled - centroid)
+            distances.append(dist)
+        else:
+            distances.append(float('inf'))  # In case a cluster is empty
+    
     predicted_cluster = np.argmin(distances)
-
+    
     st.success(f"✅ Predicted Cluster: {predicted_cluster}")
