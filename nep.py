@@ -16,11 +16,9 @@ st.title("🌍 Nepal Earthquake Hierarchical Clustering & Prediction")
 # Load Dataset
 # -------------------------------
 @st.cache_data
+@st.cache_data
 def load_data():
-    return pd.read_csv(
-        r"earthquakes_1990_2026.csv"
-    )
-
+    return pd.read_csv("nepal_earthquakes_1990_2026.csv")
 df = load_data()
 
 st.subheader("📄 Dataset Preview")
